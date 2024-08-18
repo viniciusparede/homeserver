@@ -1,0 +1,147 @@
+version: '3'
+
+name: 'media'
+
+services:
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    restart: unless-stopped
+    environment:
+      - TZ=America/Sao_Paulo
+      - WEBUI_PORT=8080
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/media/media/qbittorrent/config:/config
+      - /home/media/media/downloads/torrents:/downloads
+    ports:
+      - '8080:8080'
+      - '62609:62609'
+
+  jackett:
+    image: ghcr.io/linuxserver/jackett:latest
+    restart: unless-stopped
+    environment:
+      - TZ=America/Sao_Paulo
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/media/media/jackett/downloads:/downloads
+      - /home/media/media/jackett/config:/config
+    ports:
+      - '9117:9117'
+
+  bazarr:
+    image: ghcr.io/linuxserver/bazarr:latest
+    restart: unless-stopped
+    environment:
+      - TZ=America/Sao_Paulo
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/media/media/videos/radarr:/movies
+      - /home/media/media/videos/sonarr:/tv
+      - /home/media/media/bazarr/appdata/config:/config
+    ports:
+      - '6767:6767'
+
+ 
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=America/Sao_Paulo
+    ports:
+      - 5055:5055
+    volumes:
+      - /home/media/media/jellyseerr/config:/app/config
+    restart: unless-stopped
+
+
+  prowlarr:
+    image: ghcr.io/hotio/prowlarr:latest
+    restart: unless-stopped
+    depends_on:
+      - flaresolverr
+    environment:
+      - TZ=America/Sao_Paulo
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/media/media/prowlarr/config:/config
+    ports:
+      - '9696:9696'
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    volumes:
+      - /home/media/media/flaresolverr/config:/config
+    ports:
+      - '8191:8191'
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    restart: unless-stopped
+    environment:
+      - TZ=America/Sao_Paulo
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/media/media/downloads/nzbget:/downloads
+      - /home/media/media/downloads/nzbget/incomplete:/incomplete-downloads
+      - /home/media/media/nzbget/config:/config
+    ports:
+      - '6789:6789'
+
+  radarr:
+    image: ghcr.io/linuxserver/radarr:latest
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent
+    environment:
+      - TZ=America/Sao_Paulo
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/media/media/radarr/appdata/config:/config
+      - /home/media/media/downloads/torrents:/downloads
+      - /home/media/media/videos/radarr:/movies
+    ports:
+      - '7878:7878'
+
+  sonarr:
+    image: ghcr.io/linuxserver/sonarr:latest
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent
+    environment:
+      - TZ=America/Sao_Paulo
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/media/media/sonarr/appdata/config:/config
+      - /home/media/media/videos/sonarr:/tv
+      - /home/media/media/downloads/torrents:/downloads
+    ports:
+      - '8989:8989'
+
+ 
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Sao_Paulo
+
+    volumes:
+      - /home/media/media/jellyfin/library:/config
+      - /home/media/media/videos/sonarr:/data/tvshows
+      - /home/media/media/videos/radarr:/data/movies
+    ports:
+      - 8096:8096
+      - 8920:8920 #optional
+      - 7359:7359/udp #optional
+      - 1900:1900/udp #optional
+    restart: unless-stopped
